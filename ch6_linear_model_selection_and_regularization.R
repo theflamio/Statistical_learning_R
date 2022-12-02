@@ -11,7 +11,7 @@ Hitters=na.omit(Hitters)
 
 with(Hitters,sum(is.na(Salary))) #check if any players are missing their salary data.
 
-# Best subset regression
+########### Best subset regression #############
 # we will now use the package "leaps" to evaluate all the best-subset models
 
 library(leaps)
@@ -37,7 +37,7 @@ y <- QuickStartExample$y
 ?cv.glmnet()
 
 
-# Forward Stepwise Selection
+####### Forward Stepwise Selection #########
 
 # Here we use the "regsubsets" function but specify the "method~"forward"
 # option
@@ -84,7 +84,7 @@ plot(sqrt(val.errors),ylab = "Root MSE",ylim = c(300,400),pch=19,type="b")
 ###
 
 
-# cross validation "10 fold cross vailidation
+####### cross validation "10 fold cross vailidation ########
 
 set.seed(11)
 folds=sample(rep(1:10,length=nrow(Hitters)))
@@ -101,3 +101,43 @@ for (k in 1:10){
 
 rmse.cv=sqrt(apply(cv.errors,2,mean))
 plot(rmse.cv,pch = 19,type = "b") # best model 9 or 10
+
+###### Ridge Regression and the Lasso ######
+
+# We will use the package "glmnet", which dose not use the model formula language, so we will set up on "x" and "y"
+
+library(glmnet)
+x=model.matrix(Salary~.-1,data = Hitters)
+y=Hitters$Salary
+
+# First we will fit a ridge-regression model.
+# This is achieved by calling "glmnet" with "alpha=0" (see help file)
+# If we wanted to use Lasso then "alpha=1"
+# "alpha = 0 < x < 1" we get elastic net models
+# There is also a "cv.glmnet" function which will do the cross-validation for us.
+
+fit.ridge=glmnet(x,y,alpha = 0)
+plot(fit.ridge,xvar="lambda",label=TRUE)
+cv.ridge=cv.glmnet(x,y,alpha=0) # dose k-fold cross validation
+plot(cv.ridge) # the 20 in the top mean 19 variables plus the intercept
+
+# Now for the Lasso model: for this "alpha=1" glmnet default is alpha=1
+fit.lasso=glmnet(x,y)
+plot(fit.lasso,xvar = "lambda",label = TRUE) # top of the graph we seen numbers of non zero variables
+cv.lasso=cv.glmnet(x,y)
+plot(cv.lasso)
+coef(cv.lasso)
+
+# Suppose we want to use our earlier train/validation division to select the "lampda" for the lasso
+# This is easy to do
+
+lasso.tr=glmnet(x[train,],y[train])
+lasso.tr
+pred=predict(lasso.tr,x[-train,])
+dim(pred)
+rmse= sqrt(apply((y[-train]-pred)^2,2,mean))
+plot(log(lasso.tr$lambda),rmse,type="b",xlab = "log(Lambda)")
+lam.best=lasso.tr$lambda[order(rmse)[1]] # order aseend them first value the smallest
+lam.best
+coef(lasso.tr,s=lam.best)
+
