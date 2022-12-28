@@ -1,5 +1,9 @@
-require(ISLR)
-dataSet = load("7.R.RData")
+require(ISLR2)
+load("7.R.RData")
 
-fit=lm(wage~poly(age,4),data = dataSet)
-summary(fit)
+plot(x,y)
+model1 <- lm(y ~ 1+x+x^2)
+summary(model1)
+
+coef(model1)
+abline(model1,col="red")
